@@ -1,5 +1,6 @@
 import tkinter as tk
 import random
+import numpy as np
 from agent import Agent
 
 GRID_SIZE = 10        # 10x10
@@ -17,7 +18,7 @@ DIRECTIONS = {
 class SnakeGame:
 	def __init__(self, root, Agent=None):
 		self.Agent = Agent
-		self.AgentPOV = None
+		self.AgentPOV = []
 		self.root = root
 		self.canvas = tk.Canvas(root, width=WIDTH, height=HEIGHT, bg="lightgrey")
 		self.canvas.pack()
@@ -141,6 +142,7 @@ class SnakeGame:
 				self.check_collisions()
 				self.draw()
 				self.print_map()
+				print(self.AgentPov)
 				print(f"{new_dir}")
 
 	def check_collisions(self):
@@ -183,18 +185,18 @@ class SnakeGame:
 				grid[y][x] = "H"
 			else:
 				grid[y][x] = "S"
-
+		self.AgentPOV = []
 		for y in range(-1, size + 1):
-			self.AgentPOV = []
+			row = []
 			for x in range(-1, size + 1):
 				if (x == -1 or x == size or y == -1 or y == size) and (x == head_x or y == head_y):
-					self.AgentPOV.append("W")
+					row.append("W")
 				elif x == head_x or y == head_y:
 					if 0 <= x < size and 0 <= y < size:
-						self.AgentPOV.append(grid[y][x])
+						row.append(grid[y][x])
 					else:
-						self.AgentPOV.append("W")
+						row.append("W")
 				else:
-					self.AgentPOV.append(" ")
-			self.AgentPov = " ".join(self.AgentPOV)
-			print(self.AgentPov)
+					row.append(" ")
+			self.AgentPOV.append(" ".join(row))
+		self.AgentPov = "\n".join(self.AgentPOV)
