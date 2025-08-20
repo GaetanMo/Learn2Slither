@@ -1,3 +1,8 @@
-from board import Board
+from SnakeGame import SnakeGame
+import tkinter as tk
 
-Board()
+# Lancer le jeu
+root = tk.Tk()
+root.title("Learn2slither")
+game = SnakeGame(root)
+root.mainloop()
