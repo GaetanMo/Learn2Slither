@@ -1,8 +1,9 @@
 from SnakeGame import SnakeGame
 import tkinter as tk
-
-# Lancer le jeu
+from agent import Agent
+# Launch the Snake Game
+test = Agent()
 root = tk.Tk()
 root.title("Learn2slither")
-game = SnakeGame(root)
+game = SnakeGame(root, test)
 root.mainloop()
