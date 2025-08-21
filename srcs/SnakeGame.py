@@ -46,7 +46,7 @@ class SnakeGame:
 
 		self.running = True
 		self.food_red, self.food_green = self.place_special_foods()
-		self.print_map()
+		self.getPOV()
 		self.root.bind("<Key>", self.change_direction)
 		self.game_loop()
 
@@ -102,7 +102,7 @@ class SnakeGame:
 		dx, dy = DIRECTIONS[self.direction]
 		head_x, head_y = self.snake[0]
 		new_head = (head_x + dx, head_y + dy)
-
+ 
 		# Eat red food
 		if new_head == self.food_red:
 			if len(self.snake) == 1:
@@ -116,6 +116,7 @@ class SnakeGame:
 			empty = [(x, y) for x in range(GRID_SIZE) for y in range(GRID_SIZE)
 					 if (x, y) not in self.snake and (x, y) not in self.food_green]
 			self.food_red = random.choice(empty)
+			self.Agent.feedback("RedApple")
 		# Eat green food
 		elif new_head in self.food_green:
 			self.snake.insert(0, new_head)
@@ -123,13 +124,15 @@ class SnakeGame:
 			empty = [(x, y) for x in range(GRID_SIZE) for y in range(GRID_SIZE)
 					 if (x, y) not in self.snake and (x, y) != self.food_red and (x, y) not in self.food_green]
 			self.food_green[idx] = random.choice(empty)
-		else:
+			self.Agent.feedback("GreenApple")
+		else: # Move normally
 			self.snake.insert(0, new_head)
 			self.snake.pop()
+			self.Agent.feedback("Default")
+
 
 	def change_direction(self, event):
-		new_dir = event.keysym
-		Agent.getDirection(Agent, self.AgentPOV)
+		new_dir = self.Agent.getDirection(self.AgentPOV)
 		if new_dir in DIRECTIONS:
 			# Empêche le demi-tour
 			opposite = {
@@ -141,7 +144,7 @@ class SnakeGame:
 				self.move_snake()
 				self.check_collisions()
 				self.draw()
-				self.print_map()
+				self.getPOV()
 				print(self.AgentPov)
 				print(f"{new_dir}")
 
@@ -152,7 +155,6 @@ class SnakeGame:
 		# Wall colision
 		if not (0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE):
 			self.game_over()
-
 		# Self-collision
 		if head in self.snake[1:]:
 			self.game_over()
@@ -163,6 +165,7 @@ class SnakeGame:
 		return random.choice(empty)
 
 	def game_over(self):
+		self.Agent.feedback("GameOver")
 		self.running = False
 		self.canvas.create_text(
 			WIDTH // 2, HEIGHT // 2,
@@ -171,32 +174,29 @@ class SnakeGame:
 			fill="red"
 		)
 
-	def print_map(self):
+	def getPOV(self):
 		size = GRID_SIZE
 		grid = [["0" for _ in range(size)] for _ in range(size)]
-		head_x, head_y = self.snake[0]
 
-		rx, ry = self.food_red
-		grid[ry][rx] = "R"
+		grid[self.food_red[1]][self.food_red[0]] = "R"
 		for gx, gy in self.food_green:
 			grid[gy][gx] = "G"
+
 		for i, (x, y) in enumerate(self.snake):
-			if i == 0:
-				grid[y][x] = "H"
-			else:
-				grid[y][x] = "S"
+			grid[y][x] = "H" if i == 0 else "S"
+		head_x, head_y = self.snake[0]
 		self.AgentPOV = []
+
 		for y in range(-1, size + 1):
 			row = []
 			for x in range(-1, size + 1):
-				if (x == -1 or x == size or y == -1 or y == size) and (x == head_x or y == head_y):
-					row.append("W")
-				elif x == head_x or y == head_y:
+				if x == head_x or y == head_y:
 					if 0 <= x < size and 0 <= y < size:
 						row.append(grid[y][x])
 					else:
 						row.append("W")
 				else:
 					row.append(" ")
-			self.AgentPOV.append(" ".join(row))
-		self.AgentPov = "\n".join(self.AgentPOV)
+			self.AgentPOV.append(row)
+		self.AgentPov = "\n".join(" ".join(row) for row in self.AgentPOV)
+
