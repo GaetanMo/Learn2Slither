@@ -54,15 +54,6 @@ class SnakeGame:
 		if self.running:
 			self.draw()
 
-	def place_special_foods(self):
-		# Place red food and two green foods
-		empty = [(x, y) for x in range(GRID_SIZE) for y in range(GRID_SIZE)
-				 if (x, y) not in self.snake]
-		food_red = random.choice(empty)
-		empty.remove(food_red)
-		food_green = random.sample(empty, 2)
-		return food_red, food_green
-
 	def draw(self):
 		self.canvas.delete("all")
 		# Draw the grid
@@ -98,6 +89,15 @@ class SnakeGame:
 			fill=color
 		)
 
+	def place_special_foods(self):
+		# Place red food and two green foods
+		empty = [(x, y) for x in range(GRID_SIZE) for y in range(GRID_SIZE)
+				 if (x, y) not in self.snake]
+		food_red = random.choice(empty)
+		empty.remove(food_red)
+		food_green = random.sample(empty, 2)
+		return food_red, food_green
+
 	def move_snake(self):
 		dx, dy = DIRECTIONS[self.direction]
 		head_x, head_y = self.snake[0]
@@ -129,26 +129,7 @@ class SnakeGame:
 			self.snake.insert(0, new_head)
 			self.snake.pop()
 			self.Agent.feedback("Default")
-
-
-	def change_direction(self, event):
-		new_dir = self.Agent.getDirection(self.AgentPOV)
-		if new_dir in DIRECTIONS:
-			# Empêche le demi-tour
-			opposite = {
-				"Up": "Down", "Down": "Up",
-				"Left": "Right", "Right": "Left"
-			}
-			if opposite[new_dir] != self.direction:
-				self.direction = new_dir
-				self.move_snake()
-				self.check_collisions()
-				self.draw()
-				self.getPOV()
-				self.Agent.learn(self.AgentPOV)
-				print(self.AgentPov)
-				print(f"{new_dir}")
-
+	
 	def check_collisions(self):
 		head = self.snake[0]
 		x, y = head
@@ -159,21 +140,6 @@ class SnakeGame:
 		# Self-collision
 		if head in self.snake[1:]:
 			self.game_over()
-
-	def place_food(self):
-		empty = [(x, y) for x in range(GRID_SIZE) for y in range(GRID_SIZE)
-				 if (x, y) not in self.snake]
-		return random.choice(empty)
-
-	def game_over(self):
-		self.Agent.feedback("GameOver")
-		self.running = False
-		self.canvas.create_text(
-			WIDTH // 2, HEIGHT // 2,
-			text="Game Over",
-			font=("Arial", 24),
-			fill="red"
-		)
 
 	def getPOV(self):
 		size = GRID_SIZE
@@ -201,3 +167,59 @@ class SnakeGame:
 			self.AgentPOV.append(row)
 		self.AgentPov = "\n".join(" ".join(row) for row in self.AgentPOV)
 
+	def change_direction(self, event):
+		new_dir = self.Agent.getDirection(self.AgentPOV)
+		if new_dir in DIRECTIONS:
+			# Empêche le demi-tour
+			opposite = {
+				"Up": "Down", "Down": "Up",
+				"Left": "Right", "Right": "Left"
+			}
+			if opposite[new_dir] != self.direction:
+				self.direction = new_dir
+				self.move_snake()
+				self.check_collisions()
+				self.draw()
+			self.getPOV()
+			self.Agent.learn(self.AgentPOV)
+			print(self.AgentPov)
+			print(f"{new_dir}")
+
+
+	def reset_game(self):
+		# Reset direction
+		self.direction = random.choice(list(DIRECTIONS.keys()))
+		dx, dy = DIRECTIONS[self.direction]
+
+		# Réinitialise le serpent
+		while True:
+			head_x = random.randint(0, GRID_SIZE - 1)
+			head_y = random.randint(0, GRID_SIZE - 1)
+			valid = True
+			snake = []
+			for i in range(3):
+				x = head_x - i * dx
+				y = head_y - i * dy
+				if not (0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE):
+					valid = False
+					break
+				snake.append((x, y))
+			if valid:
+				self.snake = snake
+				break
+
+		self.running = True
+		self.food_red, self.food_green = self.place_special_foods()
+		self.getPOV()
+		self.draw()
+
+	def game_over(self):
+		self.Agent.feedback("GameOver")
+		self.running = False
+		self.canvas.create_text(
+			WIDTH // 2, HEIGHT // 2,
+			text="Game Over",
+			font=("Arial", 24),
+			fill="red"
+		)
+		self.root.after(100, self.reset_game)
