@@ -50,6 +50,10 @@ class SnakeGame:
 		self.root.bind("<Key>", self.change_direction)
 		self.game_loop()
 
+	def game_loop(self):
+		if self.running:
+			self.draw()
+
 	def place_special_foods(self):
 		# Place red food and two green foods
 		empty = [(x, y) for x in range(GRID_SIZE) for y in range(GRID_SIZE)
@@ -58,10 +62,6 @@ class SnakeGame:
 		empty.remove(food_red)
 		food_green = random.sample(empty, 2)
 		return food_red, food_green
-
-	def game_loop(self):
-		if self.running:
-			self.draw()
 
 	def draw(self):
 		self.canvas.delete("all")
@@ -145,6 +145,7 @@ class SnakeGame:
 				self.check_collisions()
 				self.draw()
 				self.getPOV()
+				self.Agent.learn(self.AgentPOV)
 				print(self.AgentPov)
 				print(f"{new_dir}")
 

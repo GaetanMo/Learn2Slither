@@ -23,8 +23,20 @@ class Agent(nn.Module):
 		self.fc2 = nn.Linear(64, 64)
 		# Couche de sortie : 64 -> nombre d'actions
 		self.out = nn.Linear(64, 4)
+		self.optimizer = torch.optim.Adam(self.parameters(), lr=0.001)
 
 	def getDirection(self, AgentPOV):
+		output = self.predict(AgentPOV)
+		print(output)
+		pred_index = torch.argmax(output).item()
+		max_value = output[0][pred_index] # Get Q-value
+		self.Qvalue = max_value.item() # Store Q-value
+		directions = ['Up', 'Down', 'Left', 'Right']
+		pred_direction = directions[pred_index]
+		print("Direction choisie :", pred_direction)
+		return pred_direction
+
+	def predict(self, AgentPOV):
 		POV = []
 		for head_y, row in enumerate(AgentPOV):
 			if "H" in row:
@@ -64,15 +76,8 @@ class Agent(nn.Module):
 		tensor_input = F.relu(self.fc1(tensor_input))
 		tensor_input = F.relu(self.fc2(tensor_input))
 		output = self.out(tensor_input)
-		print(output)
-		pred_index = torch.argmax(output).item()
-		max_value = output[0][pred_index] # Get Q-value
-		self.Qvalue = max_value.item() # Store Q-value
-		directions = ['Up', 'Down', 'Left', 'Right']
-		pred_direction = directions[pred_index]
-		print("Direction choisie :", pred_direction)
-		return pred_direction
-
+		return output
+	
 	def feedback(self, feedback):
 		if feedback == "GameOver":
 			print("Feedback: Game Over")
@@ -89,3 +94,17 @@ class Agent(nn.Module):
 		elif feedback == "Win":
 			print("Feedback: Win")
 			self.reward = 10
+	
+	def learn(self, newPOV):
+		output = self.predict(newPOV)
+		pred_index = torch.argmax(output).item()
+		max_value = output[0][pred_index] # Get Q-value
+		Qfuture = max_value.item() # Store Q-value
+		Qtarget = self.reward + gamma * Qfuture
+		Qtarget = torch.tensor(Qtarget, dtype=torch.float32)
+		loss = F.mse_loss(self.Qvalue, Qtarget)
+		print(f"LOSS = {loss}")
+		self.optimizer.zero_grad()  # remise à zéro des gradients
+		loss.backward()        # calcul des gradients
+		self.optimizer.step()       # mise à jour des poids
+		return loss.item()
