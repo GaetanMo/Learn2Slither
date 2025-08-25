@@ -2,29 +2,30 @@ import tkinter as tk
 import random
 import numpy as np
 from agent import Agent
+import time
 
+ITERATIONS = 1000
 GRID_SIZE = 10        # 10x10
 CELL_SIZE = 60        # pixels per cell
 WIDTH = HEIGHT = GRID_SIZE * CELL_SIZE
 
 # Directions (x, y)
-DIRECTIONS = {
-	"Up": (0, -1),
-	"Down": (0, 1),
-	"Left": (-1, 0),
-	"Right": (1, 0)
-}
+DIRECTIONS = [(0, -1), (1, 0), (0, 1), (-1, 0)]
 
 class SnakeGame:
-	def __init__(self, root, Agent=None):
+	def __init__(self, root, Agent, mode, epochs=5000):
+		self.mode = mode
+		self.epochs = epochs
+		self.max_snake_size = 0
 		self.Agent = Agent
 		self.AgentPOV = []
 		self.root = root
-		self.canvas = tk.Canvas(root, width=WIDTH, height=HEIGHT, bg="lightgrey")
-		self.canvas.pack()
+		if mode == "demo":
+			self.canvas = tk.Canvas(root, width=WIDTH, height=HEIGHT, bg="lightgrey")
+			self.canvas.pack()
 
 		# Random initial direction
-		self.direction = random.choice(list(DIRECTIONS.keys()))
+		self.direction = random.choice([0, 1, 2, 3])
 		dx, dy = DIRECTIONS[self.direction]
 
 		# Snake initialisation
@@ -48,11 +49,19 @@ class SnakeGame:
 		self.food_red, self.food_green = self.place_special_foods()
 		self.getPOV()
 		self.root.bind("<Key>", self.change_direction)
+		if self.mode == "train":
+			self.trainAgent()
 		self.game_loop()
 
 	def game_loop(self):
-		if self.running:
+		if self.running and self.mode == "demo":
 			self.draw()
+
+	def trainAgent(self):
+		while self.epochs > 0:
+			if self.epochs % 100 == 0:
+				print(f"Epochs remaining: {self.epochs}")
+			self.change_direction(None)
 
 	def draw(self):
 		self.canvas.delete("all")
@@ -168,27 +177,32 @@ class SnakeGame:
 		self.AgentPov = "\n".join(" ".join(row) for row in self.AgentPOV)
 
 	def change_direction(self, event):
-		new_dir = self.Agent.getDirection(self.AgentPOV)
-		if new_dir in DIRECTIONS:
-			# Empêche le demi-tour
-			opposite = {
-				"Up": "Down", "Down": "Up",
-				"Left": "Right", "Right": "Left"
-			}
-			if opposite[new_dir] != self.direction:
-				self.direction = new_dir
-				self.move_snake()
-				self.check_collisions()
-				self.draw()
-			self.getPOV()
-			self.Agent.learn(self.AgentPOV)
+		new_dir = self.Agent.getDirection(self.AgentPOV, self.direction)
+		if new_dir == 0:
+			self.direction = self.direction
+		elif new_dir == 1:
+			self.direction = (self.direction + 1) % 4
+		elif new_dir == 2:
+			self.direction = (self.direction - 1) % 4
+		self.move_snake()
+		self.check_collisions()
+		if self.mode == "demo":
+			self.draw()
 			print(self.AgentPov)
 			print(f"{new_dir}")
+		self.getPOV()
+		self.Agent.learn(self.AgentPOV, self.direction)
 
 
 	def reset_game(self):
+		self.epochs -= 1
+		if self.epochs <= 0:
+			print("Max epochs reached. Exiting.")
+			if self.mode == "demo":
+				self.root.destroy()
+			return
 		# Reset direction
-		self.direction = random.choice(list(DIRECTIONS.keys()))
+		self.direction = random.choice([0, 1, 2, 3])
 		dx, dy = DIRECTIONS[self.direction]
 
 		# Réinitialise le serpent
@@ -207,19 +221,26 @@ class SnakeGame:
 			if valid:
 				self.snake = snake
 				break
-
 		self.running = True
 		self.food_red, self.food_green = self.place_special_foods()
 		self.getPOV()
-		self.draw()
+		if self.mode == "demo":
+			self.draw()
 
 	def game_over(self):
+		if self.max_snake_size < len(self.snake):
+			self.max_snake_size = len(self.snake)
+		print(f"Max snake size: {(self.max_snake_size)}")
 		self.Agent.feedback("GameOver")
-		self.running = False
-		self.canvas.create_text(
-			WIDTH // 2, HEIGHT // 2,
-			text="Game Over",
-			font=("Arial", 24),
-			fill="red"
-		)
-		self.root.after(100, self.reset_game)
+		if self.mode == "demo":
+			self.running = False
+			self.canvas.create_text(
+				WIDTH // 2, HEIGHT // 2,
+				text="Game Over",
+				font=("Arial", 24),
+				fill="red"
+			)
+			self.root.after(10, self.reset_game)
+		elif self.mode == "train":
+			print("Resetting game...")
+			self.reset_game()

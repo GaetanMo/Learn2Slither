@@ -5,5 +5,6 @@ from agent import Agent
 test = Agent()
 root = tk.Tk()
 root.title("Learn2slither")
-game = SnakeGame(root, test)
+game = SnakeGame(root, test, "train", 2500)
+game = SnakeGame(root, test, "demo", 2500)
 root.mainloop()
