@@ -20,6 +20,7 @@ class SnakeGame:
 		self.Agent = Agent
 		self.AgentPOV = []
 		self.root = root
+		
 		if mode == "demo":
 			self.canvas = tk.Canvas(root, width=WIDTH, height=HEIGHT, bg="lightgrey")
 			self.canvas.pack()
