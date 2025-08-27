@@ -13,7 +13,9 @@ WIDTH = HEIGHT = GRID_SIZE * CELL_SIZE
 DIRECTIONS = [(0, -1), (1, 0), (0, 1), (-1, 0)]
 
 class SnakeGame:
-	def __init__(self, root, Agent, mode, epochs=5000):
+	def __init__(self, root, Agent, mode, epochs, visual=None, step_by_step=None):
+		self.visual = visual
+		self.step_by_step = step_by_step
 		self.mode = mode
 		self.epochs = epochs
 		self.max_snake_size = 0
@@ -21,7 +23,7 @@ class SnakeGame:
 		self.AgentPOV = []
 		self.root = root
 		
-		if mode == "demo":
+		if mode == "demo" or self.visual == "on":
 			self.canvas = tk.Canvas(root, width=WIDTH, height=HEIGHT, bg="lightgrey")
 			self.canvas.pack()
 
