@@ -78,7 +78,7 @@ class SnakeGame:
 			print("Training completed.")
 			return
 		self.change_direction(None)
-		self.root.after(500, self.run_automatic)
+		self.root.after(300, self.run_automatic)
 
 	def draw(self):
 		self.canvas.delete("all")
@@ -176,7 +176,9 @@ class SnakeGame:
 			grid[gy][gx] = "G"
 
 		for i, (x, y) in enumerate(self.snake):
-			grid[y][x] = "H" if i == 0 else "S"
+			if 0 <= y < size and 0 <= x < size:
+				grid[y][x] = "H" if i == 0 else "S"
+
 		head_x, head_y = self.snake[0]
 		self.AgentPOV = []
 
