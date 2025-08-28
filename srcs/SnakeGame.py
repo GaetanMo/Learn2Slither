@@ -13,7 +13,7 @@ WIDTH = HEIGHT = GRID_SIZE * CELL_SIZE
 DIRECTIONS = [(0, -1), (1, 0), (0, 1), (-1, 0)]
 
 class SnakeGame:
-	def __init__(self, root, Agent, mode, epochs, visual=None, step_by_step=None):
+	def __init__(self, root, Agent, mode, epochs, visual=None, step_by_step="off"):
 		self.visual = visual
 		self.step_by_step = step_by_step
 		self.mode = mode
@@ -22,7 +22,7 @@ class SnakeGame:
 		self.Agent = Agent
 		self.AgentPOV = []
 		self.root = root
-		
+
 		if mode == "demo" or self.visual == "on":
 			self.canvas = tk.Canvas(root, width=WIDTH, height=HEIGHT, bg="lightgrey")
 			self.canvas.pack()
@@ -51,20 +51,34 @@ class SnakeGame:
 		self.running = True
 		self.food_red, self.food_green = self.place_special_foods()
 		self.getPOV()
-		self.root.bind("<Key>", self.change_direction)
-		if self.mode == "train":
+		if self.mode == "demo" and self.step_by_step == "on":
+			self.root.bind("<Key>", self.change_direction)
+		elif self.mode == "demo" and self.step_by_step == "off":
+			self.run_automatic()
+		elif self.mode == "train":
 			self.trainAgent()
 		self.game_loop()
 
 	def game_loop(self):
-		if self.running and self.mode == "demo":
+		if self.running and self.mode == "demo" or self.visual == "on":
 			self.draw()
 
 	def trainAgent(self):
-		while self.epochs > 0:
-			if self.epochs % 100 == 0:
-				print(f"Epochs remaining: {self.epochs}")
-			self.change_direction(None)
+		if self.visual == "on" and self.step_by_step == "on":
+			self.root.bind("<Key>", self.change_direction)
+		elif self.visual == "on" and self.step_by_step == "off":
+			self.run_automatic()
+		else:
+			while self.epochs > 0:
+				self.change_direction(None)
+			self.root.destroy()
+
+	def run_automatic(self):
+		if self.epochs <= 0:
+			print("Training completed.")
+			return
+		self.change_direction(None)
+		self.root.after(500, self.run_automatic)
 
 	def draw(self):
 		self.canvas.delete("all")
@@ -189,7 +203,7 @@ class SnakeGame:
 			self.direction = (self.direction - 1) % 4
 		self.move_snake()
 		self.check_collisions()
-		if self.mode == "demo":
+		if self.mode == "demo" or self.visual == "on":
 			self.draw()
 			print(self.AgentPov)
 			print(f"{new_dir}")
@@ -200,8 +214,8 @@ class SnakeGame:
 	def reset_game(self):
 		self.epochs -= 1
 		if self.epochs <= 0:
-			print("Max epochs reached. Exiting.")
-			if self.mode == "demo":
+			print(f"Game Over, Max length: {(self.max_snake_size)}")
+			if self.mode == "demo" or self.visual == "on":
 				self.root.destroy()
 			return
 		# Reset direction
@@ -227,15 +241,14 @@ class SnakeGame:
 		self.running = True
 		self.food_red, self.food_green = self.place_special_foods()
 		self.getPOV()
-		if self.mode == "demo":
+		if self.mode == "demo" or self.visual == "on":
 			self.draw()
 
 	def game_over(self):
 		if self.max_snake_size < len(self.snake):
-			self.max_snake_size = len(self.snake)
-		print(f"Max snake size: {(self.max_snake_size)}")
+			self.max_snake_size = len(self.snake)	
 		self.Agent.feedback("GameOver")
-		if self.mode == "demo":
+		if self.mode == "demo" or self.visual == "on":
 			self.running = False
 			self.canvas.create_text(
 				WIDTH // 2, HEIGHT // 2,
@@ -243,7 +256,8 @@ class SnakeGame:
 				font=("Arial", 24),
 				fill="red"
 			)
-			self.root.after(10, self.reset_game)
+			self.root.after(100, self.reset_game)
 		elif self.mode == "train":
-			print("Resetting game...")
+			if self.epochs % 100 == 0:
+				print(f"Epochs remaining: {self.epochs}")
 			self.reset_game()
