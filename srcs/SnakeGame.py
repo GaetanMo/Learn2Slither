@@ -196,6 +196,10 @@ class SnakeGame:
             self.AgentPOV.append(row)
         self.AgentPov = "\n".join(" ".join(row) for row in self.AgentPOV)
 
+    def print_direction(self):
+        directions = ["UP", "RIGHT", "DOWN", "LEFT"]
+        print(directions[self.direction])
+
     def change_direction(self, event):
         new_dir = self.Agent.getDirection(self.AgentPOV, self.direction)
         if new_dir == 0:
@@ -209,7 +213,7 @@ class SnakeGame:
         if self.mode == "demo" or self.visual == "on":
             self.draw()
             print(self.AgentPov)
-            print(f"{new_dir}")
+            self.print_direction()
         self.getPOV()
         self.Agent.learn(self.AgentPOV, self.direction)
 
