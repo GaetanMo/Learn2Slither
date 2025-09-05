@@ -25,18 +25,25 @@ class Agent(nn.Module):
         self.out = nn.Linear(64, 3)
         self.optimizer = torch.optim.Adam(self.parameters(), lr=0.0001)
 
-    def getDirection(self, AgentPOV, ActualDirection):
-        if random.random() < self.epsilon:
-            pred_index = random.randint(0, 2)
-            self.last_input = (AgentPOV, ActualDirection)
-        else:
+    def getDirection(self, AgentPOV, ActualDirection, mode):
+        if mode == "train":
+            if random.random() < self.epsilon:
+                pred_index = random.randint(0, 2)
+                self.last_input = (AgentPOV, ActualDirection)
+            else:
+                output = self.predict(AgentPOV, ActualDirection)
+                self.last_input = (AgentPOV, ActualDirection)
+                pred_index = torch.argmax(output).item()
+                self.last_action = pred_index
+                self.Qvalue = output[0][pred_index]
+            if self.epsilon > self.epsilon_min:
+                self.epsilon *= self.epsilon_decay
+        if mode == "demo":
             output = self.predict(AgentPOV, ActualDirection)
             self.last_input = (AgentPOV, ActualDirection)
             pred_index = torch.argmax(output).item()
             self.last_action = pred_index
             self.Qvalue = output[0][pred_index]
-        if self.epsilon > self.epsilon_min:
-            self.epsilon *= self.epsilon_decay
         return pred_index
 
     def predict(self, AgentPOV, ActualDirection):

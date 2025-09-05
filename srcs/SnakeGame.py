@@ -201,7 +201,7 @@ class SnakeGame:
         print(directions[self.direction])
 
     def change_direction(self, event):
-        new_dir = self.Agent.getDirection(self.AgentPOV, self.direction)
+        new_dir = self.Agent.getDirection(self.AgentPOV, self.direction, self.mode)
         if new_dir == 0:
             self.direction = self.direction
         elif new_dir == 1:
@@ -215,7 +215,8 @@ class SnakeGame:
             print(self.AgentPov)
             self.print_direction()
         self.getPOV()
-        self.Agent.learn(self.AgentPOV, self.direction)
+        if self.mode == "train":
+            self.Agent.learn(self.AgentPOV, self.direction)
 
     def reset_game(self):
         self.epochs -= 1
